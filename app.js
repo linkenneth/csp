@@ -23,11 +23,16 @@ App.CSP = function(variables, constraints) {
   this.constraints = constraints;
 };
 
+App.CSP.prototype.assignmentComplete = function(assignment) {
+  return Object.keys(assignment).length === Object.keys(this.variables).length;
+};
+
 App.CSP.prototype.satisfiedBy = function(assignment) {
-  return this.constraints.every(function(element, index, array) {
-    return element(assignment);
-  });
-}
+  return this.assignmentComplete(assignment) &&
+    this.constraints.every(function(element, index, array) {
+      return element(assignment);
+    });
+};
 
 /* --- Naive search algorithms --- */
 
@@ -43,7 +48,8 @@ App.CSP.prototype.satisfiedBy = function(assignment) {
  */
 App.naive_search = function(csp) {
   fringe = [];
-  fringe.push(csp.variables[0]);
+  fringe.push({});
+  var keys = Object.keys(csp.variables)
   while (true) {
     if (!fringe.length) {
       return "FAILURE"  // TOOD - failure signal
@@ -52,13 +58,15 @@ App.naive_search = function(csp) {
     if (csp.satisfiedBy(assignment)) {
       return assignment;
     }
-    var next_variable = csp.variables.keys.filter(function(element) {
-      assignment.contains(element);
+    var next_variable = keys.filter(function(element) {
+      return !(element in assignment);
     })[0];
-    for (var value in csp.variables[next_variable]) {
-      var clone = goog.object.clone(assignment);
-      clone[x] = value;
-      fringe.push(clone);
+    if (next_variable) {
+      for (var i = 0; i < csp.variables[next_variable].length; i++) {
+	var clone = goog.object.clone(assignment);
+	clone[next_variable] = csp.variables[next_variable][i];
+	fringe.push(clone);
+      }
     }
   }
 };
@@ -71,12 +79,40 @@ App.naive_search = function(csp) {
  * the tree. Combined with inference techniques, it becomes one of the main
  * ways we solve generic CSPs.
  */
-function backtrack(assignment, csp) {}
+function backtrack(assignment, csp, select_variable,
+		   order_domain_values, inference) {
+  if (csp.assignmentComplete(assignment)) {
+    return assignment;
+  }
+  var variable = select_variable(csp.variables, assignment);
+  var values = order_domain_values(variable, assignment, csp);
+  for (var i = 0; i < values.length; i++) {
+    assignment[variable] = values[i];
+    var result = backtrack(assignment, csp,
+			   select_variable, order_domain_values, inference);
+    if (result != "FAILURE") {
+      return result;
+    }
+    delete a[variable];
+  }
+  return "FAILURE";
+}
+
+App.select_mrv = function(variables, assignment) {
+  var keys = Object.keys(variables);
+  var domains = keys.map(function(key) {
+    return variables[key].filter(function(value) {
+      return !assignment[value]
+    });
+  });
+};
+
 App.backtracking_search = function(csp,
 				   select_variable,
 				   order_domain_values,
 				   inference) {
-  return backtrack({}, csp);
+  select_variable = select_variable || select_mrv;
+  return backtrack({}, csp, select_variable, order_domain_values, inference);
 };
 
 /* --- Filtering --- */
