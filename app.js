@@ -25,7 +25,7 @@ App.CSP = function(variables, constraints) {
 
 App.CSP.prototype.assignmentComplete = function(assignment) {
   for (var i in assignment) {
-    if (!i.assigned) {
+    if (!assignment[i].assigned) {
       return false;
     }
   }
@@ -35,8 +35,8 @@ App.CSP.prototype.assignmentComplete = function(assignment) {
 App.CSP.prototype.emptyAssignment = function() {
   var result = {};
   for (var variable in this.variables) {
-    result[variable] = { assigned : false };
-    result[variable]['domain'] = this.variables[variable];
+    result[variable] = { 'assigned' : false };
+    result[variable]['domain'] = $.extend(true, {}, this.variables[variable]);
   }
   return result;
 };
@@ -73,17 +73,16 @@ App.naive_search = function(csp) {
     if (!fringe.length) {
       return "FAILURE"  // TOOD - failure signal
     }
-    var assignment = fringe.pop();  // node = {'v1':assign_1, 'v2':assign_2, ...}
+    var assignment = fringe.pop();
     if (csp.satisfiedBy(assignment)) {
       return assignment;
     }
     var next_variable = keys.filter(function(element) {
       return !assignment[element].assigned;
     })[0];
-    console.log(next_variable);
     if (next_variable) {
       for (var i = 0; i < csp.variables[next_variable].length; i++) {
-	var clone = goog.object.clone(assignment);
+	var clone = $.extend(true, {}, assignment);
 	clone[next_variable].assigned = csp.variables[next_variable][i];
 	fringe.push(clone);
       }
