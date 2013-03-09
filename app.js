@@ -1,3 +1,5 @@
+goog.require('goog.object');
+
 var App = App || {};
 
 /* A Constraint is a function that takes an object of the variables as an
@@ -21,6 +23,12 @@ App.CSP = function(variables, constraints) {
   this.constraints = constraints;
 };
 
+App.CSP.prototype.satisfiedBy = function(assignment) {
+  return this.constraints.every(function(element, index, array) {
+    return element(assignment);
+  });
+}
+
 /* --- Naive search algorithms --- */
 
 /* A naive search uses standard search algorithms to try and compute an
@@ -33,13 +41,27 @@ App.CSP = function(variables, constraints) {
  * instead have a runtime of O(n!d^n). Further, they do not use any sort of
  * logic to infer possible outcomes.
  */
-App.naive_search = function(csp, strategy) {
-  
+App.naive_search = function(csp) {
+  fringe = [];
+  fringe.push(csp.variables[0]);
+  while (true) {
+    if (!fringe.length) {
+      return "FAILURE"  // TOOD - failure signal
+    }
+    var assignment = fringe.pop();  // node = {'v1':assign_1, 'v2':assign_2, ...}
+    if (csp.satisfiedBy(assignment)) {
+      return assignment;
+    }
+    var next_variable = csp.variables.keys.filter(function(element) {
+      assignment.contains(element);
+    })[0];
+    for (var value in csp.variables[next_variable]) {
+      var clone = goog.object.clone(assignment);
+      clone[x] = value;
+      fringe.push(clone);
+    }
+  }
 };
-
-App.naive_search.strategy = {};
-App.naive_search.strategy['bfs'] = function() {};  // TODO
-App.naive_search.strategy['dfs'] = function() {};  // TODO
 
 /* --- Backtracking search --- */
 
