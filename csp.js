@@ -8,7 +8,7 @@ var allDiff = function(assignment, diff_variables) {
       if (v1 === v2) {
 	continue;
       }
-      if (assignment[v1] === assignment[v2]) {
+      if (assignment[v1].assigned === assignment[v2].assigned) {
 	return false;
       }
     }

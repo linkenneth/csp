@@ -24,7 +24,21 @@ App.CSP = function(variables, constraints) {
 };
 
 App.CSP.prototype.assignmentComplete = function(assignment) {
-  return Object.keys(assignment).length === Object.keys(this.variables).length;
+  for (var i in assignment) {
+    if (!i.assigned) {
+      return false;
+    }
+  }
+  return true;
+};
+
+App.CSP.prototype.emptyAssignment = function() {
+  var result = {};
+  for (var variable in this.variables) {
+    result[variable] = { assigned : false };
+    result[variable]['domain'] = this.variables[variable];
+  }
+  return result;
 };
 
 App.CSP.prototype.satisfiedBy = function(assignment) {
@@ -35,6 +49,11 @@ App.CSP.prototype.satisfiedBy = function(assignment) {
 };
 
 /* --- Naive search algorithms --- */
+/*
+ * An assignment is defined slightly unintuitively as we need to keep track
+ * of variable domains. An assignment is defined as an object
+ *    { var : { assigned : value/undefined, domain : [...] }, ... }
+ */
 
 /* A naive search uses standard search algorithms to try and compute an
  * answer. We can vary the strategy of each search by changing the type of
@@ -48,7 +67,7 @@ App.CSP.prototype.satisfiedBy = function(assignment) {
  */
 App.naive_search = function(csp) {
   fringe = [];
-  fringe.push({});
+  fringe.push(csp.emptyAssignment());
   var keys = Object.keys(csp.variables)
   while (true) {
     if (!fringe.length) {
@@ -59,12 +78,13 @@ App.naive_search = function(csp) {
       return assignment;
     }
     var next_variable = keys.filter(function(element) {
-      return !(element in assignment);
+      return !assignment[element].assigned;
     })[0];
+    console.log(next_variable);
     if (next_variable) {
       for (var i = 0; i < csp.variables[next_variable].length; i++) {
 	var clone = goog.object.clone(assignment);
-	clone[next_variable] = csp.variables[next_variable][i];
+	clone[next_variable].assigned = csp.variables[next_variable][i];
 	fringe.push(clone);
       }
     }
@@ -88,12 +108,12 @@ function backtrack(assignment, csp, select_variable,
   var values = order_domain_values(variable, assignment, csp);
   for (var i = 0; i < values.length; i++) {
     assignment[variable] = values[i];
-    var result = backtrack(assignment, csp,
-			   select_variable, order_domain_values, inference);
+    var result = backtrack(assignment, csp, select_variable,
+			   order_domain_values, inference);
     if (result != "FAILURE") {
       return result;
     }
-    delete a[variable];
+    delete assignment[variable];
   }
   return "FAILURE";
 }
