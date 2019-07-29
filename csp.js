@@ -1,6 +1,7 @@
 /* Common constraints */
 var allDiff = function(assignment, diff_variables) {
   diff_variables = diff_variables || Object.keys(assignment);
+  console.log(diff_variables);
   for (var i = 0; i < diff_variables.length; i++) {
     var v1 = diff_variables[i];
     for (var j = 0; j < diff_variables.length; j++) {

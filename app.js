@@ -103,34 +103,50 @@ function backtrack(assignment, csp, select_variable,
   if (csp.assignmentComplete(assignment)) {
     return assignment;
   }
-  var variable = select_variable(csp.variables, assignment);
+  var variable = select_variable(csp.variables, assignment, csp);
   var values = order_domain_values(variable, assignment, csp);
   for (var i = 0; i < values.length; i++) {
-    assignment[variable] = values[i];
-    var result = backtrack(assignment, csp, select_variable,
-			   order_domain_values, inference);
-    if (result != "FAILURE") {
-      return result;
+    if (isConsistent(assignment, value)) {
+      var clone = $.extend(true, {}, assignment);
+      clone[variable].assigned = values[i];
+      var result = backtrack(clone, csp, select_variable,
+			     order_domain_values, inference);
+      if (result !== "FAILURE") {
+	return result;
+      }
     }
-    delete assignment[variable];
   }
   return "FAILURE";
 }
 
-App.select_mrv = function(variables, assignment) {
+function isConsistent(assignment, value) {
+  return assignment.every( function() {
+    return null;
+  });
+}
+
+App.select_mrv = function(variables, assignment, csp) {
   var keys = Object.keys(variables);
-  var domains = keys.map(function(key) {
-    return variables[key].filter(function(value) {
-      return !assignment[value]
+  var domains = keys.map( function(key) {
+    return variables[key].filter( function(value) {
+      return !csp.constraints.some( function(constraint) {
+	return constraint(value);
+      });
     });
   });
+};
+
+App.order_any = function(variable, assignment, csp) {
+  return assignment[variable].domain[0];
 };
 
 App.backtracking_search = function(csp,
 				   select_variable,
 				   order_domain_values,
 				   inference) {
-  select_variable = select_variable || select_mrv;
+  select_variable = select_variable || App.select_mrv;
+  order_domain_values = select_variable || App.order_any;
+  inference = select_variable || function() { return true; };
   return backtrack({}, csp, select_variable, order_domain_values, inference);
 };
 
